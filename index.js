@@ -121,6 +121,20 @@ function canSubmitPrice(key, link, price) {
     return CONFIG.price_key && key === CONFIG.price_key && price && link.isMarketLink() && utils.isOnlyDigits(price);
 }
 
+setTimeout(() => {
+    if (botController.getReadyAmount() === 0) {
+        winston.info('No bot online! Unhealthy! Should restart');
+        process.exit(1)
+    }
+}, 20 * 1000)
+
+setInterval(() => {
+    if (botController.getReadyAmount() === 0) {
+        winston.info('No bot online! Unhealthy! Should restart');
+        process.exit(1)
+    }
+}, 3 * 60 * 1000)
+
 app.use(function (req, res, next) {
     if (CONFIG.allowed_origins.length > 0 && req.get('origin') != undefined) {
         // check to see if its a valid domain
@@ -224,6 +238,14 @@ app.get('/stats', (req, res) => {
         queue_size: queue.queue.length,
         queue_concurrency: queue.concurrency,
     });
+});
+
+app.get('/health', (req, res) => {
+    if (botController.getReadyAmount() > 0) {
+        res.status(200).send('OK');
+    } else {
+        res.status(400).send('No bot online! Unhealthy');
+    }
 });
 
 const http_server = require('http').Server(app);
